@@ -51,6 +51,7 @@ public class play extends BasicGameState{
     Image minusButton;   
     Image velocityScale;
     Image velocityScaleFront;
+   static Image[] coin1 = new Image[60];
     
 	//map scale
 	static int mapScale = 2;
@@ -70,8 +71,7 @@ public class play extends BasicGameState{
     
     //planet coordinates
     
-    //MAKE LESS THAN X TO NOT HAVE FLICKER
-    static double[] planetX = new double[25];
+    static double[] planetX = new double[65];
     static double[] planetY = new double[planetX.length];
     static double[] planetColorG = new double[planetX.length];
     static double[] planetColorR = new double[planetX.length];
@@ -141,7 +141,7 @@ public class play extends BasicGameState{
     
      //planet counter
     static int objectCounter = 0;
-    static boolean objectSuccess = false;
+    static int objectSuccess = 0;
     
     //planet spacing
     static int objectSpacing = 800;
@@ -150,8 +150,18 @@ public class play extends BasicGameState{
     static boolean settingVariables = true;
     
      //area of level;
-    static int areaWidth = 10000;
-    static int areaHeigth = 10000;
+    static int areaWidth = 20000;
+    static int areaHeigth = 20000;
+    
+    //coin variables
+    static int[]objectOrbiting = new int[coin1.length];
+    static double[]coinX = new double[coin1.length];
+    static double[]coinY = new double[coin1.length];
+    static double[]coinVelocity = new double[coin1.length];
+    static int[]coinDistance = new int[coin1.length];
+    static double[]coinRotation = new double[coin1.length];
+    static int[]coinObjectNumber = new int[coin1.length];
+    static boolean[]coinAlive = new boolean[coin1.length];
     
 	@SuppressWarnings("unchecked")
 	public void init(GameContainer gc, StateBasedGame sbg) throws SlickException{
@@ -171,6 +181,12 @@ public class play extends BasicGameState{
 	    for(int x = 0; x < planetX.length; x++){
 	        isPlanetOrbiting[x] = false;
 	        }
+	    
+	       for (int i = 0; i < coin1.length; i++ ) {
+	    	   coin1[i] = new Image("res/1point.png");
+	    	   coinAlive[i] = true;
+	        }
+
 	    settingVariables = false;
 		}
 		
@@ -194,12 +210,13 @@ public class play extends BasicGameState{
 		    g.drawString((100*objectCounter)/planetX.length + "%", 600, 346);
 		    
 		    //planet creator
-		    if(objectCounter == planetX.length-1){
+		    if(objectCounter == planetX.length - 1){
 		    	begin = true;
+		    	setCoinPoints();
 		    }else{
-		    	if(objectSuccess){
-		    		objectSuccess = false;
-		    		objectCounter++;
+		    	if(objectSuccess != 0){
+		    		objectCounter += objectSuccess;
+		    		objectSuccess = 0;
 		    	}
 		    	generatePlanets(objectCounter);
 		    }
@@ -254,28 +271,59 @@ public class play extends BasicGameState{
 			}else{
 				cordinateY += Math.abs(shipSpeed*Math.sin(Math.toRadians((shipRealRotation))));
 			}
+			
+			//DRAWING BORDER OF LEVEL
+			
+			Color levelColor = new Color(67,205,239,128);
+			g.setColor(levelColor);
+			
+			g.fillRect(systemX((-areaWidth/2) - 1500), systemY((-areaHeigth/2) - 1500), 1000, areaHeigth + 2999);
+			g.fillRect(systemX((areaWidth/2) + 1500), systemY((-areaHeigth/2) - 1500), 1000, areaHeigth + 2999);
+			g.fillRect(systemX((-areaWidth/2)-1500), systemY((areaHeigth/2) + 1500), areaWidth + 3999, 1000);
+			g.fillRect(systemX((-areaWidth/2) - 499) , systemY((-areaHeigth/2) - 1500), areaWidth + 1998, 1000);
+			
+			//DRAWING COINS
+			for(int x = 0; x < coinX.length; x++){
+				if(systemX((int) coinX[x]) >  shipXConstant - 2000 && systemX((int) coinX[x]) < shipXConstant + 2000 && systemY((int) coinY[x]) > shipYConstant + 2000 && systemY((int) coinY[x]) < shipYConstant -2000){					
+				}else{
+				if(coinX[x] != 0){
+			g.drawImage(coin1[x], systemX((int) coinX[x]),systemY((int) coinY[x]));
+				}
+				}
+			}
+			
 			//DRAWING PLANET 
 			for(int x = 0; x < planetCounter; x++){
+				if(systemX((int) planetX[x]) >  shipXConstant - 2000 && systemX((int) planetX[x]) < shipXConstant + 2000 && systemY((int) planetY[x]) > shipYConstant + 2000 && systemY((int) planetY[x]) < shipYConstant -2000){					
+				}else{
 			Color tileColor = new Color((int) planetColorR[x],(int) planetColorG[x],(int) planetColorB[x]);
 			g.setColor(tileColor);
 			g.fillOval((float)systemX((int) planetX[x]), (float) systemY((int) planetY[x]), (float) planetSize[x],(float)  planetSize[x]);
+				}
 			}
 			
 			//DRAWING MOON
 			for(int x = 0; x < moonCounter; x++){
+				if(systemX((int) moonX[x]) >  shipXConstant - 2000 && systemX((int) moonX[x]) < shipXConstant + 2000 && systemY((int) moonY[x]) > shipYConstant + 2000 && systemY((int) moonY[x]) < shipYConstant -2000){					
+				}else{
 				if(moonX[x] != 0){
 			Color moonColor = new Color((int) moonColorR[x],(int) moonColorG[x],(int) moonColorB[x]);
 			g.setColor(moonColor);
 			g.fillOval((float)systemX((int) moonX[x]), (float) systemY((int) moonY[x]), (float) moonSize[x],(float)  moonSize[x]);
 				}
+				}
 			}
 			
 			//DRAWING SUN 
 			for(int x = 0; x < sunCounter; x++){
+				if(systemX((int) sunX[x]) >  shipXConstant - 2000 && systemX((int) sunX[x]) < shipXConstant + 2000 && systemY((int) sunY[x]) > shipYConstant + 2000 && systemY((int) sunY[x]) < shipYConstant -2000){					
+				}else{
 			Color sunColor = new Color((int) sunColorR[x],(int) sunColorG[x],(int) sunColorB[x]);
 			g.setColor(sunColor);
 			g.fillOval((float)systemX((int) sunX[x]), (float) systemY((int) sunY[x]), (float) sunSize[x],(float)  sunSize[x]);
 			}
+			}
+			
 			
 			//UPDATING PLANETS
 			updatingPlanets();
@@ -414,16 +462,9 @@ public class play extends BasicGameState{
 		g.setColor(Color.orange);
 		g.drawString("x : " + (int) cordinateX + "y : " + (int) cordinateY, 300, 50);
 		
-		//DRAWING BORDER OF LEVEL
+		//COLLISION DETECTION
+		collisionDetection();
 		
-		Color levelColor = new Color(240,230,71,128);
-		g.setColor(levelColor);
-		
-		/*g.fillRect(systemX((-areaWidth/2) - 1500), systemY((-areaHeigth/2) - 1500), 1000, areaHeigth + 2999);
-		g.fillRect(systemX((areaWidth/2) + 1500), systemY((-areaHeigth/2) - 1500), 1000, areaHeigth + 2999);
-		g.fillRect(systemX((-areaWidth/2)-1500), systemY((areaHeigth/2) + 1500), areaWidth + 3999, 1000);
-		g.fillRect(systemX((-areaWidth/2) - 499) , systemY((-areaHeigth/2) - 1500), areaWidth + 1998, 1000);
-		*/
 		}
 
 	}
@@ -520,8 +561,7 @@ public class play extends BasicGameState{
 		
 		//UPDATING SUNS
 		for(int x = 0; x < sunX.length; x ++){
-			if(sunX[x] >  shipXConstant - 2000 && sunX[x] < shipXConstant + 2000 && sunY[x] > shipYConstant + 2000 && sunY[x] < shipYConstant -2000){
-				
+			if(systemX((int) sunX[x]) >  shipXConstant - 2000 && systemX((int) sunX[x]) < shipXConstant + 2000 && systemY((int) sunY[x]) > shipYConstant + 2000 && systemY((int) sunY[x]) < shipYConstant -2000){					
 			}else{
 			
 			double v = 0;
@@ -590,8 +630,7 @@ public class play extends BasicGameState{
 		
 		//UPDATING PLANETS
 		for(int x = 0; x < planetCounter; x ++){
-			if(planetX[x] >  shipXConstant - 2000 && planetX[x] < shipXConstant + 3000 && planetY[x] > shipYConstant + 2000 && planetY[x] < shipYConstant -2000){
-				
+			if(systemX((int) planetX[x]) >  shipXConstant - 2000 && systemX((int) planetX[x]) < shipXConstant + 2000 && systemY((int) planetY[x]) > shipYConstant + 2000 && systemY((int) planetY[x]) < shipYConstant -2000){					
 			}else{
 			
 			double v = 0;
@@ -673,11 +712,9 @@ public class play extends BasicGameState{
 		
 		//UPDATING MOONS
 		for(int x = 0; x < moonCounter; x ++){
-			
-			if(moonX[x] >  shipXConstant - 2000 && moonX[x] < shipXConstant + 3000 && moonY[x] > shipYConstant + 2000 && moonY[x] < shipYConstant -2000){
-				
+			if(systemX((int) moonX[x]) >  shipXConstant - 2000 && systemX((int) moonX[x]) < shipXConstant + 2000 && systemY((int) moonY[x]) > shipYConstant + 2000 && systemY((int) moonY[x]) < shipYConstant -2000){					
 			}else{
-			
+				
 			double v = 0;
 			double y = 0;
 			double r = 0;
@@ -760,7 +797,40 @@ public class play extends BasicGameState{
 			
 			
 		}
-	}
+		
+		//UPDATING COINS
+		for(int x = 0; x < coinX.length; x ++){
+			if(coinAlive[x]){
+			if(objectOrbiting[x] != -1){
+				//MOVING COINS					
+				
+				if(coinRotation[x] <= 360){
+					coinRotation[x] += coinVelocity[x]/5;
+				}else{
+					coinRotation[x] = 0;
+				}
+					
+					if(objectOrbiting[x] == 0){
+				//X DIRECTION
+				coinX[x] = planetX[coinObjectNumber[x]] + (planetSize[coinObjectNumber[x]]/2) - 20 + coinDistance[x]*(Math.cos(Math.toRadians(coinRotation[x])));
+				
+				//Y DIRECTION			
+				coinY[x] = planetY[coinObjectNumber[x]] + (planetSize[coinObjectNumber[x]]/2) -20 + coinDistance[x]*(Math.sin(Math.toRadians(coinRotation[x])));
+				}
+					
+					if(objectOrbiting[x] == 1){
+				//X DIRECTION
+				coinX[x] = sunX[coinObjectNumber[x]] + (sunSize[coinObjectNumber[x]]/2) - 20 + coinDistance[x]*(Math.cos(Math.toRadians(coinRotation[x])));
+				
+				//Y DIRECTION			
+				coinY[x] = sunY[coinObjectNumber[x]] + (sunSize[coinObjectNumber[x]]/2) -20 + coinDistance[x]*(Math.sin(Math.toRadians(coinRotation[x])));
+				}
+				}
+			}
+		}
+			
+			
+		}
 	
 	//DRAWING EXAUST
 	public static void exaust(){	
@@ -1089,7 +1159,7 @@ public class play extends BasicGameState{
 					    sunColorB[sunCounter]= 5 + randomGenerator.nextInt(25); 
 					    
 					    if(z == x){
-						    objectSuccess = true;
+						    objectSuccess ++;
 						    }						    
 					    
 					    
@@ -1136,7 +1206,7 @@ public class play extends BasicGameState{
 					    planetCounter++;
 					    
 					    if(z == x){
-						    objectSuccess = true;
+						    objectSuccess ++;
 						    }	
 					    }
 					    
@@ -1189,7 +1259,7 @@ public class play extends BasicGameState{
 							    planetCounter++;
 							    
 							    if(z == x){
-								    objectSuccess = true;
+								    objectSuccess ++;
 								    }	
 					    }
 								
@@ -1239,7 +1309,7 @@ public class play extends BasicGameState{
 								    planetCounter++;
 								    
 								    if(z == x){
-									    objectSuccess = true;
+									    objectSuccess ++;
 									    }	
 						    }
 						    
@@ -1288,7 +1358,7 @@ public class play extends BasicGameState{
 									    planetCounter++;
 									    
 									    if(z == x){
-										    objectSuccess = true;
+										    objectSuccess ++;
 										    }	
 							    }
 					    }
@@ -1321,7 +1391,7 @@ public class play extends BasicGameState{
 			    sunCounter++;
 			   }
 			    if(z == x){
-				    objectSuccess = true;
+				    objectSuccess ++;
 				    }	
 			    
 				 }
@@ -1350,7 +1420,7 @@ public class play extends BasicGameState{
 			    planetCounter++;
 			    
 			    if(z == x){
-				    objectSuccess = true;
+				    objectSuccess ++;
 				    }	
 				 }
 			}else{
@@ -1359,15 +1429,13 @@ public class play extends BasicGameState{
 			 
 			creatingMoon(x, moonCounterPlanetTotal,moonCounterSunTotal, randomX, randomY,createMoonR,createMoonR2, xy);
 			}						
-			 }else{
-				 objectSuccess = true;
-			 }
+			}
 			 }
 	}
 	
 	public static void creatingMoon(int x, int moonCounterPlanetTotal, int moonCounterSunTotal, int randomX, int randomY, int createMoonR, int createMoonR2, int xy){
 		if((moonCounterSunTotal > x && moonCounterPlanetTotal > x && (createMoonR == 1)) || ((xy == 2 && createMoonR == 1))){
-			if((randomX > -300 && randomX < 1400) && (randomY < 900 && randomY > -900)){
+			if((randomX > -300 && randomX < 1400) && (randomY < 900 && randomY > -900) && moonCounter < moonX.length - 1){
 			}else{
 		int e = 0;
 		
@@ -1418,4 +1486,80 @@ public class play extends BasicGameState{
 		}
 	}
 	
+	public static void setCoinPoints(){
+		int setCoin = 0;
+		int coinCounter = 0;
+		
+			for(int y = 0; y < planetX.length; y++){
+				
+				if(coinCounter < coin1.length - 1){					
+				
+				setCoin = randomGenerator.nextInt(3);
+
+				switch(setCoin){
+				//orbiting planet
+				case 0:
+					if(planetX[y] != 0){
+						
+						coinVelocity[coinCounter] = 2 + randomGenerator.nextInt(10);
+						
+					objectOrbiting[coinCounter] = 0;
+					coinObjectNumber[coinCounter] = y;					
+					
+				coinDistance[coinCounter] = 200 + randomGenerator.nextInt(300);
+				
+					coinX[coinCounter]= planetX[y] - coinDistance[coinCounter] - (planetSize[y]/2) + 45;
+					coinY[coinCounter]= planetY[y] - coinDistance[coinCounter] - (planetSize[y]/2) + 45;
+					
+					setCoin = 10;
+					}
+				break;
+				
+				//orbiting sun
+				case 1:
+					if(sunX[y] != 0){
+						
+						coinVelocity[coinCounter] = 1 + randomGenerator.nextInt(4);
+						
+					coinDistance[coinCounter] = 800 + randomGenerator.nextInt(400);
+					
+					objectOrbiting[coinCounter] = 1;		
+					coinObjectNumber[coinCounter] = y;
+					
+					
+					coinX[coinCounter]= sunX[y] + (sunSize[y]/2) - coinDistance[coinCounter] - (sunSize[y]/2) + 45;
+					coinY[coinCounter]= sunY[y] + (sunSize[y]/2) - coinDistance[coinCounter] - (sunSize[y]/2) + 45;
+					
+					}
+				break;
+				
+				//staying still
+				case 2:
+					coinX[coinCounter] = -(areaWidth/2) + randomGenerator.nextInt(areaWidth);
+					coinY[coinCounter] = -(areaHeigth/2) + randomGenerator.nextInt(areaHeigth);
+					objectOrbiting[coinCounter] = -1;
+					break;
+				}
+				coinCounter++;
+				}
+				setCoin = 0;
+			}
+	}	
+	
+	//first Y is up and second Y is down
+	public static void collisionDetection(){
+		for(int x = 0; x < coinX.length; x++){
+			
+			if(systemX((int) coinX[x]) >  shipXConstant - 50 && systemX((int) coinX[x]) < shipXConstant + 20 && systemY((int) coinY[x]) > shipYConstant - 70 && systemY((int) coinY[x]) < shipYConstant +15){		
+				
+				System.out.println("Collision!");
+				coinX[x] = -10000;
+				coinY[x] = -10000;
+				coinAlive[x] = false;
+		}else{			
+			
+		}
+		}
+		
+	}
 }

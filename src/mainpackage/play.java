@@ -24,9 +24,13 @@ public class play extends BasicGameState{
 	int mouseX2;
 	int mouseY2;
 	
-	static double[] starX = new double[100];
-	static double[] starY = new double[100];
+	static double[] starX = new double[80];
+	static double[] starY = new double[80];
+	static int starSpeed = 15;
 	
+	static double[] starMediumX = new double[30];
+	static double[] starMediumY = new double[30];
+	static int starMediumSpeed = 1;
 	//EXAUST VARIABLES
 	static double[] exhaustX = new double[100];
 	static double[] exhaustY = new double[100];
@@ -42,16 +46,16 @@ public class play extends BasicGameState{
 	
 	//is space bar pressed?
 	static boolean spacebar = false;
-	static double shipSpeed = 0;
-	static int shipMaxSpeed = 20;
+	static int shipMaxSpeed = 15;
 	
 	//IMAGES
     Image ship;
     Image plusButton;
     Image minusButton;   
-    Image velocityScale;
-    Image velocityScaleFront;
-   static Image[] coin1 = new Image[60];
+    Image velocityScale; 
+    Image velocityScaleFront1;
+    Image velocityScaleFront2;
+   static Image[] coin1 = new Image[100];
     
 	//map scale
 	static int mapScale = 2;
@@ -98,6 +102,7 @@ public class play extends BasicGameState{
     static double[] moonVelocity = new double[moonX.length];
     static int[] moonPlanetNumber = new int[moonX.length];
     static double[] moonRotation = new double[moonX.length];
+    
     static int moonCounter = 0;
     
     //sun coordinates
@@ -153,6 +158,15 @@ public class play extends BasicGameState{
     static int areaWidth = 20000;
     static int areaHeigth = 20000;
     
+    //ship LOCK rotation variables
+    static double shipXSpeed = 0;
+    static double shipYSpeed = 0;
+    static double shipLockRotation = 0;
+    static boolean spacebarPressed = false;
+    static boolean shipXGoing = true;
+    static boolean shipYGoing = true;
+    static int shipSpeedup = 10;
+    
     //coin variables
     static int[]objectOrbiting = new int[coin1.length];
     static double[]coinX = new double[coin1.length];
@@ -162,6 +176,8 @@ public class play extends BasicGameState{
     static double[]coinRotation = new double[coin1.length];
     static int[]coinObjectNumber = new int[coin1.length];
     static boolean[]coinAlive = new boolean[coin1.length];
+    
+    static int coinTotal = 0;
     
 	@SuppressWarnings("unchecked")
 	public void init(GameContainer gc, StateBasedGame sbg) throws SlickException{
@@ -248,8 +264,12 @@ public class play extends BasicGameState{
 			g.setColor(Color.white);
 					
 			for(int x = 0; x < starX.length; x++){
-			g.fillRect((int) starX[x],(int) starY[x], 2, 2);
+			g.fillRect((int) starX[x],(int) starY[x], 1, 1);
 			}
+			
+			for(int x = 0; x < starMediumX.length; x++){
+				g.fillRect((int) starMediumX[x],(int) starMediumY[x], 3, 3);
+				}
 			
 			//DRAWING EXAUST
 			exaust();
@@ -261,16 +281,57 @@ public class play extends BasicGameState{
 			}
 			//CORDINATE SYSTEM
 			
-			if(shipRealRotation >= 90 && shipRealRotation <= 270){
-				cordinateX -= Math.abs(shipSpeed*Math.cos(Math.toRadians((shipRealRotation))));
-			}else{
-				cordinateX += Math.abs(shipSpeed*Math.cos(Math.toRadians((shipRealRotation))));
+			if(spacebarPressed){
+				shipLockRotation = shipRealRotation;
 			}
-			if(shipRealRotation >= 180 && shipRealRotation < 360){
-				cordinateY -= Math.abs(shipSpeed*Math.sin(Math.toRadians((shipRealRotation))));
-			}else{
-				cordinateY += Math.abs(shipSpeed*Math.sin(Math.toRadians((shipRealRotation))));
-			}
+			
+			cordinateX += shipXSpeed;
+			cordinateY += shipYSpeed;
+
+			//SHIP SPEEDS!
+				if(spacebarPressed){
+
+					if(shipRealRotation >= 0 && shipRealRotation <= 180){
+						if(shipYSpeed< shipMaxSpeed){
+							if(shipXGoing){
+						shipYSpeed+=Math.sin(Math.toRadians((shipRealRotation)))/shipSpeedup;		
+							}
+						shipYGoing = true;
+						}else{
+						shipYGoing = false;
+						}
+					}else{
+						if(shipYSpeed > -shipMaxSpeed){
+							if(shipXGoing){
+						shipYSpeed+=Math.sin(Math.toRadians((shipRealRotation)))/shipSpeedup;
+							}
+						shipYGoing = true;
+						}else{
+							shipYGoing = false;
+						}
+					}
+					
+					if(shipRealRotation >= 90 && shipRealRotation <= 270){
+						if(shipXSpeed > -shipMaxSpeed){
+							if(shipYGoing){
+						shipXSpeed+=Math.cos(Math.toRadians((shipRealRotation)))/shipSpeedup;
+							}
+						shipXGoing = true;
+						}else{
+							shipXGoing = false;
+						}
+					}else{
+						if(shipXSpeed < shipMaxSpeed){
+							if(shipYGoing){
+						shipXSpeed+=Math.cos(Math.toRadians((shipRealRotation)))/shipSpeedup;
+							}
+						shipXGoing = true;
+						}else{
+							shipXGoing = false;
+						}
+					}
+				}
+				
 			
 			//DRAWING BORDER OF LEVEL
 			
@@ -357,6 +418,10 @@ public class play extends BasicGameState{
 		case 5:
 			totalX = 71;
 			totalY = 63;
+			break;			
+		case 6:
+			totalX = 75;
+			totalY = 65;
 			break;
 		}		
 		
@@ -426,25 +491,36 @@ public class play extends BasicGameState{
 		cordinateX +=shipNetForceX;
 		cordinateY +=shipNetForceY;
 		
-		//FRICTION OF SHIP
-		if(shipSpeed > 0){
-		shipSpeed -= .003;
-		}
-		
 		ship = new Image("res/ship.png");
-		velocityScale = new Image("res/velocityScale.png");
-		velocityScaleFront = new Image("res/velocityScaleFront.png");
+		velocityScale = new Image("res/speedBackGround.png");
+		velocityScaleFront1 = new Image("res/speedFrontGround.png");
+		velocityScaleFront2 = new Image("res/speedFrontGround.png");
 		ship.setRotation(shipRotation);
 		g.drawImage(ship, 600, 300);
 		
-		//drawing velocity scale
-		g.drawImage(velocityScale, 1051, 480);
+		//drawing velocity scale(s)?
+		g.drawImage(velocityScale, 1051, 442);
 		
-		Color velocityColor = new Color(40,(int) 221,57);
+		Color velocityColor = new Color(94,223,26);
+		Color velocityColor2 = new Color(240,77,21);
+		
+		if(shipXSpeed > 0){
 		g.setColor(velocityColor);
-		g.fillRect(1051, 480,(float) ((float) (shipSpeed*1280)/shipMaxSpeed/5.6), 60);
+		}else{
+		g.setColor(velocityColor2);
+		}
+		g.fillRect(1051, 512,(float) (Math.abs(((shipXSpeed*1280)/shipMaxSpeed/5.6))), 30);		
 		
-		g.drawImage(velocityScaleFront, 1051, 480);
+		if(shipYSpeed > 0){
+		g.setColor(velocityColor);
+		}else{
+		g.setColor(velocityColor2);
+		}
+		
+		g.fillRect(1051, 458,(float) (Math.abs(((shipYSpeed*1280)/shipMaxSpeed/5.6))), 30);
+		
+		g.drawImage(velocityScaleFront2, 1051, 453);
+		g.drawImage(velocityScaleFront1, 1051, 507);
 		
 		//testing mouse input
 		//fUnicodeFont.drawString(590, 155, "test",Color.black);
@@ -461,6 +537,9 @@ public class play extends BasicGameState{
 		//DRAWING CORDS
 		g.setColor(Color.orange);
 		g.drawString("x : " + (int) cordinateX + "y : " + (int) cordinateY, 300, 50);
+		
+		//DRAWING COIN TOTAL
+		g.drawString("Coins : " + coinTotal, 1150, 400);
 		
 		//COLLISION DETECTION
 		collisionDetection();
@@ -492,7 +571,7 @@ public class play extends BasicGameState{
 		if(mouseX >= startup.toPixelsX(198) && mouseX <= startup.toPixelsX(204)){
 			if(mouseY >= startup.toPixelsY(223) && mouseY <= startup.toPixelsY(233)){
 				if(input.isMousePressed(0)){
-					if(mapScale < 5){
+					if(mapScale < 6){
 				mapScale++;
 					}
 				}
@@ -515,16 +594,27 @@ public class play extends BasicGameState{
 		
 		//making ship move
 		if(input.isKeyDown(Input.KEY_SPACE)){
-			if(shipSpeed < shipMaxSpeed){
-			shipSpeed+=.09;
 			spacebar = true;
-			}
+			spacebarPressed = true;
+		}else{
+			spacebarPressed = false;
 		}
 		
+		//slowing ship
 		if(input.isKeyDown(Input.KEY_W)){
-			if(shipSpeed > 0){
-			shipSpeed -=.08;
+			
+			if(shipXSpeed > 0){
+				shipXSpeed -=.04;
+			}else{
+				shipXSpeed+=.04;
 			}
+			
+			if(shipYSpeed > 0){
+				shipYSpeed -=.04;
+			}else{
+				shipYSpeed+=.04;
+			}
+			
 		}
 		
 		if(input.isKeyPressed(Input.KEY_R)){
@@ -836,7 +926,7 @@ public class play extends BasicGameState{
 	public static void exaust(){	
 		
 		for(int x = 1; x < 100; x++){
-			if(spacebar && exaustOn[x] == false){
+			if(spacebar && exaustOn[x] == false && shipXGoing && shipYGoing){
 				if(randomGenerator.nextInt(20) == 10){
 					exaustStation[x] = true;
 					if(shipRealRotation >= 0 && shipRealRotation <= 45){
@@ -882,17 +972,17 @@ public class play extends BasicGameState{
 			
 			if(exaustStation[x]){
 		if(shipRealRotation >= 90 && shipRealRotation <= 270){
-			exaustStationX[x] = Math.abs(shipSpeed*Math.cos(Math.toRadians((shipRealRotation))));
+			exaustStationX[x] = Math.abs(6*Math.cos(Math.toRadians((shipRealRotation))));
 			exaustStationDegreeX[x] = 0;
 		}else{
-			exaustStationX[x] = Math.abs(shipSpeed*Math.cos(Math.toRadians((shipRealRotation))));
+			exaustStationX[x] = Math.abs(6*Math.cos(Math.toRadians((shipRealRotation))));
 			exaustStationDegreeX[x] = 1;
 		}
 		if(shipRealRotation >= 180 && shipRealRotation < 360){
-			exaustStationY[x] = Math.abs(shipSpeed*Math.sin(Math.toRadians((shipRealRotation))));
+			exaustStationY[x] = Math.abs(6*Math.sin(Math.toRadians((shipRealRotation))));
 			exaustStationDegreeY[x] = 0;
 		}else{
-			exaustStationY[x] = Math.abs(shipSpeed*Math.sin(Math.toRadians((shipRealRotation))));
+			exaustStationY[x] = Math.abs(6*Math.sin(Math.toRadians((shipRealRotation))));
 			exaustStationDegreeY[x] = 1;
 		}
 		exaustStation[x] = false;
@@ -917,12 +1007,21 @@ public class play extends BasicGameState{
 	
 	//DRAWING STARS
 	public static void drawingStars(){
-		for(int x = 0; x < 100; x++){
+		for(int x = 0; x < starX.length; x++){
 			if(playStart == false){
-				starX[x] = -1500 + randomGenerator.nextInt(3500);
-				starY[x] = -1000 + randomGenerator.nextInt(3500);
-				if(x == 99){
+				
+				for(int b = 0; b < starX.length; b++){
+				starX[b] = -1500 + randomGenerator.nextInt(3500);
+				starY[b] = -1000 + randomGenerator.nextInt(3500);
+				}
+				
+				for(int c = 0; c < starMediumX.length; c++){
+				starMediumX[c] = -1500 + randomGenerator.nextInt(3500);
+				starMediumY[c] = -1000 + randomGenerator.nextInt(3500);
+				}
+				if(x == starX.length - 1){
 					playStart = true;
+				
 				}
 			}else{
 			if(starX[x] < -1500 || starX[x] > 2500 || starY[x] < -1000 || starY[x] > 2000){
@@ -946,18 +1045,44 @@ public class play extends BasicGameState{
 
 				}else{
 					
-					if(shipRealRotation >= 90 && shipRealRotation <= 270){
-						starX[x] += Math.abs(shipSpeed*Math.cos(Math.toRadians((shipRealRotation))))/10;
-					}else{
-						starX[x] -= Math.abs(shipSpeed*Math.cos(Math.toRadians((shipRealRotation))))/10;
-					}
-					if(shipRealRotation >= 180 && shipRealRotation < 360){
-						starY[x] -= Math.abs(shipSpeed*Math.sin(Math.toRadians((shipRealRotation))))/10;
-					}else{
-						starY[x] += Math.abs(shipSpeed*Math.sin(Math.toRadians((shipRealRotation))))/10;
-					}
+						starX[x] += -shipXSpeed/starSpeed;
+						starX[x] += -shipNetForceX/starSpeed;
+										
+						starY[x] += shipYSpeed/starSpeed;											
+						starY[x] += shipNetForceY/starSpeed;
+
 				}
 			}
+		}
+		
+		for(int x = 0; x < starMediumX.length; x++){
+			if(starMediumX[x] < -1500 || starMediumX[x] > 2500 || starMediumY[x] < -1000 || starMediumY[x] > 2000){
+				
+				if(starMediumY[x] < -1000){
+					starMediumX[x] = -1500 + randomGenerator.nextInt(3500);
+					starMediumY[x] = 900 + randomGenerator.nextInt(500);
+					}
+					if(starMediumY[x] > 2000){
+						starMediumX[x] = -1500 + randomGenerator.nextInt(3500);
+						starMediumY[x] = -2 - randomGenerator.nextInt(990);
+					}
+					if(starMediumX[x] < -1500){
+						starMediumX[x] = 1290 + randomGenerator.nextInt(500);
+						starMediumY[x] = -1000 + randomGenerator.nextInt(3000);
+					}
+					if(starMediumX[x] > 2500){
+						starMediumX[x] = 0 - randomGenerator.nextInt(1290);
+						starMediumY[x] = -1000 + randomGenerator.nextInt(3000);
+					}
+
+				}else{
+					
+						starMediumX[x] += -shipXSpeed/starMediumSpeed;
+						starMediumX[x] += -shipNetForceX/starMediumSpeed;
+						
+						starMediumY[x] += shipYSpeed/starMediumSpeed;
+						starMediumY[x] += shipNetForceY/starMediumSpeed;					
+				}
 		}
 	}
 	
@@ -1441,6 +1566,7 @@ public class play extends BasicGameState{
 		
 		//CREATING FIRST MOON
 		if(xy == 0){
+			if(planetCounter < planetX.length - 5){
 		planetMiddleX[x] = systemX((int) planetX[planetCounter]) + (planetSize[planetCounter]/2);
 		planetMiddleY[x] = (float) systemY((int) planetY[planetCounter]);
 		}
@@ -1458,9 +1584,11 @@ public class play extends BasicGameState{
 	    
 	    moonVelocity[moonCounter] = 3 + randomGenerator.nextInt(10);
 	    moonCounter++;
-	    
+		}
 	    //CREATING SECOND MOON
 		if(createMoonR2 == 1 && moonOrbitingDistance[moonCounter] + moonSize[moonCounter] < moonOrbitingDistance[moonCounter-1] - moonSize[moonCounter-1]){
+			
+			if(planetCounter < planetX.length - 5){
 		planetMiddleX[x] = systemX((int) planetX[planetCounter]) + (planetSize[planetCounter]/2);
 		planetMiddleY[x] = (float) systemY((int) planetY[planetCounter]);					
 		
@@ -1479,7 +1607,7 @@ public class play extends BasicGameState{
 	    
 	    moonVelocity[moonCounter] = 3 + randomGenerator.nextInt(5);
 	    moonCounter++;
-		    
+			}
 		}
 
 			}
@@ -1552,7 +1680,8 @@ public class play extends BasicGameState{
 			
 			if(systemX((int) coinX[x]) >  shipXConstant - 50 && systemX((int) coinX[x]) < shipXConstant + 20 && systemY((int) coinY[x]) > shipYConstant - 70 && systemY((int) coinY[x]) < shipYConstant +15){		
 				
-				System.out.println("Collision!");
+				coinTotal ++;
+
 				coinX[x] = -10000;
 				coinY[x] = -10000;
 				coinAlive[x] = false;

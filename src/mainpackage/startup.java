@@ -13,6 +13,7 @@ public class startup extends StateBasedGame{
 		super(gamename);
 		this.addState(new menu(menu));
 		this.addState(new play(play));
+		this.addState(new shop(shop));
 
 	}
 	
@@ -23,6 +24,7 @@ public class startup extends StateBasedGame{
 	public static final String gamename = "Expedition";
 	public static final int menu = 0;
 	public static final int play = 1;
+	public static final int shop = 2;
 	public static final int DEFAULT_WIDTH = 1280;
 	public static final int DEFAULT_HEIGHT = 720;
 
@@ -30,6 +32,7 @@ public class startup extends StateBasedGame{
 	public void initStatesList(GameContainer gc) throws SlickException {
 		this.getState(menu).init(gc, this);
 		this.getState(play).init(gc, this);
+		this.getState(shop).init(gc, this);
 		this.enterState(menu);
 		
 	}

@@ -196,14 +196,18 @@ public class play extends BasicGameState{
     
     //ship health
     static double shipMaxHealth = 200;
-    static double shipCurrentHealth;
+    static double shipCurrentHealth = 200;
+    static int healthDelay = 10;
     
     private static Shape square = null;
     
+    //collision arrays
     private static Circle[] moons = new Circle[moonX.length];
     private static Circle[] planets = new Circle[planetX.length];
     private static Circle[] suns = new Circle[sunX.length];
     private static Circle[] coins = new Circle[coin1.length];
+    
+    //planet variables
     
 	@SuppressWarnings("unchecked")
 	public void init(GameContainer gc, StateBasedGame sbg) throws SlickException{
@@ -363,11 +367,13 @@ public class play extends BasicGameState{
 							
 							if(shipRealRotation > 90 && shipRealRotation <= 270){									
 							}else{
+								shipGoing = true;
 							shipXSpeed+=Math.cos(Math.toRadians((shipRealRotation)))/shipSpeedup;
 							}
 						
 						}else{
 							if(shipRealRotation > 90 && shipRealRotation <= 270){
+								shipGoing = true;
 							shipXSpeed+=Math.cos(Math.toRadians((shipRealRotation)))/shipSpeedup;
 							}
 						}
@@ -375,12 +381,14 @@ public class play extends BasicGameState{
 						if(shipYSpeed < 0){
 							
 							if(shipRealRotation >= 0 && shipRealRotation <= 180){
+								shipGoing = true;
 								shipYSpeed+=Math.sin(Math.toRadians((shipRealRotation)))/shipSpeedup;
 							}
 							
 						}else{
 							
 							if(shipRealRotation >= 180 && shipRealRotation <= 360){
+								shipGoing = true;
 								shipYSpeed+=Math.sin(Math.toRadians((shipRealRotation)))/shipSpeedup;
 							}	
 							
@@ -581,10 +589,10 @@ public class play extends BasicGameState{
 		g.setColor(whiteColor);
 		g.fillRect(1065, 50, 200, 60);
 		
-		shipCurrentHealth = 50;
+		if(shipCurrentHealth > 0){
 		g.setColor(healthColor);
 		g.fillRect(1065, 50, (int)((shipCurrentHealth/shipMaxHealth)*200), 60);
-		
+		}
 		//testing mouse input
 		//fUnicodeFont.drawString(590, 155, "test",Color.black);
 		g.setColor(Color.white);
@@ -607,16 +615,21 @@ public class play extends BasicGameState{
 		if(pause == false){
 			
 			//SETTING CIRCLES
-			setCircles();
-			
-		//COLLISION DETECTION
-		collisionDetection();		
+			setCircles();		
 		
 		//UPDATING PLANETS
 		updatingPlanets();
 		
 		//DRAWING STARS
 		drawingStars();
+		
+		//COLLISION DETECTION
+		collisionDetection();
+		
+		//looping health delay
+		if(healthDelay > 0){
+			healthDelay--;
+		}
 		
 		}else{
 			//drawing pause stuff
@@ -1830,19 +1843,159 @@ public class play extends BasicGameState{
 		}
 		}		
 		
-		//planets
+		//PLANETS
+		
 		for(int x = 0; x < planetX.length; x++){
 			
 			if(square.intersects(planets[x]) || square.contains(planets[x])){
-				coinTotal ++;
-
-				coinX[x] = -10000;
-				coinY[x] = -10000;
-				coinAlive[x] = false;
-		}else{			
+				
+				if(healthDelay <= 0){
+				healthDelay = 40;
+				shipCurrentHealth-=(Math.sqrt(((shipXSpeed*shipXSpeed) + (shipYSpeed*shipYSpeed)))*8)+8;
+				}
+				
+				//x dir
+				if(shipXConstant > systemX((int) planetX[x])){
+					
+					if(healthDelay == 40){
+					shipXSpeed= Math.abs(shipNetForceX) + 1.5;
+					}else{
+					shipXSpeed += 1;	
+					}
+					
+				}else{
+					if(healthDelay == 40){
+					shipXSpeed= -Math.abs(shipNetForceX) -1.5;
+					}else{
+						shipXSpeed -= 1;	
+					}
+				}
+				
+				//y dir
+				
+				if(shipYConstant > systemY((int) ((int) planetY[x]+(planetSize[x]/2)))){
+					
+					if(healthDelay == 40){
+					shipYSpeed= -Math.abs(shipNetForceY) - 1.5;
+					}else{
+						shipYSpeed-=1;	
+					}
+					
+				}else{
+					
+					if(healthDelay == 40){
+					shipYSpeed= Math.abs(shipNetForceY) + 1.5;		
+					}else{
+						shipYSpeed+=1;	
+					}
+					
+				}
+			 
+		}
+		}
+		
+		//SUNS
+		
+		for(int x = 0; x < sunX.length; x++){
 			
+			if(square.intersects(suns[x]) || square.contains(suns[x])){
+				
+				if(healthDelay <= 0){
+				healthDelay = 40;
+				shipCurrentHealth-=(Math.sqrt(((shipXSpeed*shipXSpeed) + (shipYSpeed*shipYSpeed)))*8) + 8;
+				}
+				
+				//x dir
+				if(shipXConstant > systemX((int) sunX[x])){
+					
+					if(healthDelay == 40){
+					shipXSpeed= Math.abs(shipNetForceX) +2.5;
+					}else{
+					shipXSpeed += 1;	
+					}
+					
+				}else{
+					if(healthDelay == 40){
+					shipXSpeed= -Math.abs(shipNetForceX) -2.5;
+					}else{
+						shipXSpeed -= 1;	
+					}
+				}
+				
+				//y dir
+				
+				if(shipYConstant > systemY((int) ((int) sunY[x]+(planetSize[x]/2)))){
+					
+					if(healthDelay == 40){
+					shipYSpeed= -Math.abs(shipNetForceY) - 2.5;
+					}else{
+						shipYSpeed-=1;	
+					}
+					
+				}else{
+					
+					if(healthDelay == 40){
+					shipYSpeed= Math.abs(shipNetForceY) + 2.5;		
+					}else{
+						shipYSpeed+=1;	
+					}
+					
+				}
+			 
 		}
 		}
+		
+		//MOONS
+		
+		for(int x = 0; x < moonX.length; x++){
+			
+			if(square.intersects(moons[x]) || square.contains(moons[x])){
+				
+				if(healthDelay <= 0){
+				healthDelay = 40;
+				shipCurrentHealth-=(Math.sqrt(((shipXSpeed*shipXSpeed) + (shipYSpeed*shipYSpeed)))*8) + 8;
+				}
+				
+				//x dir
+				if(shipXConstant > systemX((int) moonX[x])){
+					
+					if(healthDelay == 40){
+					shipXSpeed= Math.abs(shipNetForceX) +1.5;
+					}else{
+					shipXSpeed += 1;	
+					}
+					
+				}else{
+					if(healthDelay == 40){
+					shipXSpeed= -Math.abs(shipNetForceX) -1.5;
+					}else{
+						shipXSpeed -= 1;	
+					}
+				}
+				
+				//y dir
+				
+				if(shipYConstant > systemY((int) ((int) moonY[x]+(planetSize[x]/2)))){
+					
+					if(healthDelay == 40){
+					shipYSpeed= -Math.abs(shipNetForceY) - 1.5;
+					}else{
+						shipYSpeed-=1;	
+					}
+					
+				}else{
+					
+					if(healthDelay == 40){
+					shipYSpeed= Math.abs(shipNetForceY) + 1.5;		
+					}else{
+						shipYSpeed+=1;	
+					}
+					
+				}
+			 
+		}
+		}
+		
 	}
 	
 	//resetting variables from shop

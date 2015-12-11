@@ -58,10 +58,11 @@ public class play extends BasicGameState{
     Image plusButton;
     Image minusButton;   
     Image velocityScale; 
-    Image velocityScaleFront1;
-    Image velocityScaleFront2;
+    Image velocityScaleFront;
     Image settingsIcon;
     Image shopIcon;
+    Image boostFrontGround;
+    Image boostBackGround;
     
    static Image[] coin1 = new Image[120];
     
@@ -207,7 +208,15 @@ public class play extends BasicGameState{
     private static Circle[] suns = new Circle[sunX.length];
     private static Circle[] coins = new Circle[coin1.length];
     
-    //planet variables
+    //boost stuff
+    static int boostLevel;
+    static double boostCooldown; //out of 100;
+    
+    //bouncing variables
+    
+    static boolean shipInteracted = false;
+    static double shipXHolder;
+    static double shipYHolder;
     
 	@SuppressWarnings("unchecked")
 	public void init(GameContainer gc, StateBasedGame sbg) throws SlickException{
@@ -559,8 +568,7 @@ public class play extends BasicGameState{
 		}
 		ship = new Image("res/ship.png");
 		velocityScale = new Image("res/velocityScale.png");
-		velocityScaleFront1 = new Image("res/speedFrontGround.png");
-		velocityScaleFront2 = new Image("res/speedFrontGround.png");
+		velocityScaleFront = new Image("res/speedFrontGround.png");
 		ship.setRotation(shipRotation);
 
 		g.drawImage(ship, 600, 300);
@@ -576,7 +584,7 @@ public class play extends BasicGameState{
 		}else{
 			g.fillRect(1051, 494,(float) (Math.abs((((Math.sqrt((shipXSpeedSave*shipXSpeedSave)+(shipYSpeedSave*shipYSpeedSave)))*1280)/shipMaxSpeed/5.6))), 48);		
 		}
-		g.drawImage(velocityScaleFront1, 1051, 507);
+		g.drawImage(velocityScaleFront, 1051, 507);
 		
 		Color surroundColor = new Color(100,100,100);
 		Color whiteColor = new Color(200,200,200);		
@@ -593,6 +601,30 @@ public class play extends BasicGameState{
 		g.setColor(healthColor);
 		g.fillRect(1065, 50, (int)((shipCurrentHealth/shipMaxHealth)*200), 60);
 		}
+		
+		//drawing boost bar
+		boostFrontGround = new Image("res/boostFrontGround.png");
+		
+		Color loadingColor = new Color(231,72,10);
+		Color finishedColor = new Color(231,156,10);
+		
+		Color boostBackGroundColor = new Color(163,163,163);
+		g.setColor(boostBackGroundColor);
+		g.fillRect(1230, 370, 50, 100);
+		
+		if(boostCooldown < 100){
+			
+			if(pause == false){
+			boostCooldown+=.05;
+			}
+			g.setColor(loadingColor);
+			g.fillRect(1230, 470 ,50, (int)-(((boostCooldown/100)*100)));
+		}else{
+			g.setColor(finishedColor);
+			g.fillRect(1230, 370 ,50, 100);
+		}
+		g.drawImage(boostFrontGround,1230, 370);
+		
 		//testing mouse input
 		//fUnicodeFont.drawString(590, 155, "test",Color.black);
 		g.setColor(Color.white);
@@ -610,7 +642,7 @@ public class play extends BasicGameState{
 		g.drawString("x : " + (int) cordinateX + "y : " + (int) cordinateY, 300, 50);
 		
 		//DRAWING COIN TOTAL
-		g.drawString("Coins : " + coinTotal, 1150, 400);
+		g.drawString("Coins : " + coinTotal, 1150, 300);
 		
 		if(pause == false){
 			
@@ -1809,8 +1841,43 @@ public class play extends BasicGameState{
 	}	
 	
 	//first Y is up and second Y is down
-	public static void collisionDetection(){
-
+	public static void collisionDetection(){		
+		
+		System.out.println(shipXHolder + " / " + shipYHolder);
+		
+		//ship bouncing effect (pretty much fake gravity)
+		if(shipInteracted){
+			
+			//ship x direction
+			if(shipXHolder  > .15){
+				shipXHolder -=.15;
+				shipXSpeed -= .15;
+			}else{
+				if(shipXHolder < -.15){
+					shipXHolder +=.15;
+					shipXSpeed += .15;
+				}
+			}
+			
+			//ship y direction
+			if(shipYHolder  > .15){
+				shipYHolder -=.15;
+				shipYSpeed -= .15;
+			}else{
+				if(shipYHolder < -.15){
+					shipYHolder +=.15;
+					shipYSpeed += .15;
+				}
+			}
+			
+			if(shipYHolder > -.15 && shipYHolder < .15){
+				if(shipXHolder > -.15 && shipXHolder < .15){
+					shipInteracted = false;
+				}
+			}
+			
+		}
+		
 		//MAP BORDERS
 		if((cordinateX + shipXConstant) <= systemX((-areaWidth) - 1500)){
 			shipXSpeed += (double) shipMaxSpeed/20;
@@ -1855,7 +1922,7 @@ public class play extends BasicGameState{
 				}
 				
 				//x dir
-				if(shipXConstant > systemX((int) planetX[x])){
+				if(shipXConstant > systemX((int) ((int) planetX[x]+(planetSize[x]/2)))){
 					
 					if(healthDelay == 40){
 					shipXSpeed= Math.abs(shipNetForceX) + 1.5;
@@ -1891,6 +1958,7 @@ public class play extends BasicGameState{
 					
 				}
 			 
+				setShipHolders(shipXSpeed, shipYSpeed);
 		}
 		}
 		
@@ -1906,58 +1974,7 @@ public class play extends BasicGameState{
 				}
 				
 				//x dir
-				if(shipXConstant > systemX((int) sunX[x])){
-					
-					if(healthDelay == 40){
-					shipXSpeed= Math.abs(shipNetForceX) +2.5;
-					}else{
-					shipXSpeed += 1;	
-					}
-					
-				}else{
-					if(healthDelay == 40){
-					shipXSpeed= -Math.abs(shipNetForceX) -2.5;
-					}else{
-						shipXSpeed -= 1;	
-					}
-				}
-				
-				//y dir
-				
-				if(shipYConstant > systemY((int) ((int) sunY[x]+(planetSize[x]/2)))){
-					
-					if(healthDelay == 40){
-					shipYSpeed= -Math.abs(shipNetForceY) - 2.5;
-					}else{
-						shipYSpeed-=1;	
-					}
-					
-				}else{
-					
-					if(healthDelay == 40){
-					shipYSpeed= Math.abs(shipNetForceY) + 2.5;		
-					}else{
-						shipYSpeed+=1;	
-					}
-					
-				}
-			 
-		}
-		}
-		
-		//MOONS
-		
-		for(int x = 0; x < moonX.length; x++){
-			
-			if(square.intersects(moons[x]) || square.contains(moons[x])){
-				
-				if(healthDelay <= 0){
-				healthDelay = 40;
-				shipCurrentHealth-=(Math.sqrt(((shipXSpeed*shipXSpeed) + (shipYSpeed*shipYSpeed)))*8) + 8;
-				}
-				
-				//x dir
-				if(shipXConstant > systemX((int) moonX[x])){
+				if(shipXConstant > systemX((int) ((int) sunX[x]+(sunSize[x]/2)))){
 					
 					if(healthDelay == 40){
 					shipXSpeed= Math.abs(shipNetForceX) +1.5;
@@ -1975,7 +1992,7 @@ public class play extends BasicGameState{
 				
 				//y dir
 				
-				if(shipYConstant > systemY((int) ((int) moonY[x]+(planetSize[x]/2)))){
+				if(shipYConstant > systemY((int) ((int) sunY[x]+(sunSize[x]/2)))){
 					
 					if(healthDelay == 40){
 					shipYSpeed= -Math.abs(shipNetForceY) - 1.5;
@@ -1992,7 +2009,58 @@ public class play extends BasicGameState{
 					}
 					
 				}
-			 
+				setShipHolders(shipXSpeed, shipYSpeed);
+		}
+		}
+		
+		//MOONS
+		
+		for(int x = 0; x < moonX.length; x++){
+			
+			if(square.intersects(moons[x]) || square.contains(moons[x])){
+				
+				if(healthDelay <= 0){
+				healthDelay = 40;
+				shipCurrentHealth-=(Math.sqrt(((shipXSpeed*shipXSpeed) + (shipYSpeed*shipYSpeed)))*8) + 8;
+				}
+				
+				//x dir
+				if(shipXConstant > systemX((int) ((int) moonX[x]+(moonSize[x]/2)))){
+					
+					if(healthDelay == 40){
+					shipXSpeed= Math.abs(shipNetForceX) +1.5;
+					}else{
+					shipXSpeed += 1;	
+					}
+					
+				}else{
+					if(healthDelay == 40){
+					shipXSpeed= -Math.abs(shipNetForceX) -1.5;
+					}else{
+						shipXSpeed -= 1;	
+					}
+				}
+				
+				//y dir
+				
+				if(shipYConstant > systemY((int) ((int) moonY[x]+(moonSize[x]/2)))){
+					
+					if(healthDelay == 40){
+					shipYSpeed= -Math.abs(shipNetForceY) - 1.5;
+					}else{
+						shipYSpeed-=1;	
+					}
+					
+				}else{
+					
+					if(healthDelay == 40){
+					shipYSpeed= Math.abs(shipNetForceY) + 1.5;		
+					}else{
+						shipYSpeed+=1;	
+					}
+					
+				}
+				setShipHolders(shipXSpeed, shipYSpeed);
 		}
 		}
 		
@@ -2041,6 +2109,15 @@ public class play extends BasicGameState{
 		coins[x].setCenterY((float) (systemY((int)coinY[x]) + 15));
 		coins[x].setRadius(30);
 	}
+	}
+	
+	public static void setShipHolders(double x, double y){
+		
+		shipXHolder = x*.9;
+		shipYHolder = y*.9;
+		
+		shipInteracted = true;
+		
 	}
 	
 }
